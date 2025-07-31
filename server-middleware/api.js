@@ -144,29 +144,6 @@ function readDB() {
       : [];
     parsedData.tags = Array.isArray(parsedData.tags) ? parsedData.tags : [];
 
-    // 数据迁移：将旧格式的prev/next对象转换为新的ID引用格式
-    parsedData.articles.forEach((article) => {
-      // 迁移prev引用
-      if (
-        article.prev &&
-        typeof article.prev === "object" &&
-        article.prev.id &&
-        !article.prevId
-      ) {
-        article.prevId = article.prev.id;
-        delete article.prev;
-      }
-      // 迁移next引用
-      if (
-        article.next &&
-        typeof article.next === "object" &&
-        article.next.id &&
-        !article.nextId
-      ) {
-        article.nextId = article.next.id;
-        delete article.next;
-      }
-    });
     return parsedData;
   } catch (error) {
     // 尝试删除损坏的数据库文件
@@ -548,32 +525,6 @@ router.get("/articles/detail/:id", async (req, res) => {
     // 安全访问articles数组，防止undefined错误
     const articles = Array.isArray(db.articles) ? db.articles : [];
     const article = articles.find((a) => String(a.id) === String(articleId));
-    // 构建安全的导航链接，避免循环引用
-    if (article) {
-      article.prev = article.prevId
-        ? {
-            id: article.prevId,
-            title:
-              article.prevId !== article.id
-                ? articles.find((a) => a && a.id === article.prevId)?.title ||
-                  "未知文章"
-                : "未知文章",
-          }
-        : null;
-      article.next = article.nextId
-        ? {
-            id: article.nextId,
-            title:
-              article.nextId !== article.id
-                ? articles.find((a) => a && a.id === article.nextId)?.title ||
-                  "未知文章"
-                : "未知文章",
-          }
-        : null;
-      // 删除ID字段避免重复
-      delete article.prevId;
-      delete article.nextId;
-    }
 
     if (!article) {
       res.statusCode = 404;
@@ -595,6 +546,10 @@ router.get("/articles/detail/:id", async (req, res) => {
     // 显式构建安全的响应对象，仅包含必要字段
     let safeArticle;
     try {
+      // 获取前后文章的完整信息
+      const prevArticle = article.prevId ? articles.find(a => String(a.id) === String(article.prevId)) : null;
+      const nextArticle = article.nextId ? articles.find(a => String(a.id) === String(article.nextId)) : null;
+      
       safeArticle = {
         id: article.id,
         title: article.title,
@@ -606,18 +561,14 @@ router.get("/articles/detail/:id", async (req, res) => {
         tags: article.tags,
         summary: article.summary || "",
         cover: article.cover || "",
-        prev: article.prev
-          ? {
-              id: article.prev.id,
-              title: article.prev.title,
-            }
-          : null,
-        next: article.next
-          ? {
-              id: article.next.id,
-              title: article.next.title,
-            }
-          : null,
+        prev: prevArticle ? {
+          id: prevArticle.id,
+          title: prevArticle.title
+        } : null,
+        next: nextArticle ? {
+          id: nextArticle.id,
+          title: nextArticle.title
+        } : null,
       };
     } catch (constructionError) {
         throw new Error(`构建文章响应对象时出错: ${constructionError.message}`);
