@@ -266,13 +266,6 @@ export default {
       }
 
       this.submittingReply = true;
-      // 调试日志：打印回复参数
-      console.log("提交回复参数:", {
-        parentReplyId: this.replyTo.parentId,
-        targetId: this.replyTo.rootId,
-        content: this.replyContent,
-        articleId: this.articleId,
-      });
       try {
         const payload = {
           parentReplyId: this.replyTo.parentId,

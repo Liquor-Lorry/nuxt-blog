@@ -35,7 +35,6 @@ function getDb() {
 
 // 确保数据目录存在
 if (!fs.existsSync(dataDir)) {
-  console.log("创建数据目录:", dataDir);
   fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
 }
 
@@ -117,19 +116,11 @@ const defaultData = {
 
 // 读取数据库
 function readDB() {
-  console.log("=== 开始读取数据库 ===");
-  console.log("数据库路径:", dbPath);
-  console.log("路径是否存在:", fs.existsSync(dbPath));
-  if (fs.existsSync(dbPath)) {
-    console.log("文件大小:", fs.statSync(dbPath).size);
-  }
   if (!fs.existsSync(dbPath)) {
-    console.log("数据库文件不存在，创建默认数据...");
     try {
       fs.writeFileSync(dbPath, JSON.stringify(defaultData, null, 2), "utf8");
       return defaultData;
     } catch (writeError) {
-      console.error("创建默认数据库文件失败:", writeError);
       // 返回内存中的默认数据，即使无法写入文件
       return defaultData;
     }
@@ -176,26 +167,21 @@ function readDB() {
         delete article.next;
       }
     });
-    console.log("数据库加载成功，文章数量:", parsedData.articles.length);
     return parsedData;
   } catch (error) {
-    console.error("数据库读取或解析错误:", error);
     // 尝试删除损坏的数据库文件
     try {
       if (fs.existsSync(dbPath)) {
-        console.log("删除损坏的数据库文件:", dbPath);
         fs.unlinkSync(dbPath);
       }
     } catch (deleteError) {
-      console.error("删除损坏数据库文件失败:", deleteError);
+      // 删除失败，继续处理
     }
     // 创建全新的默认数据库
     try {
-      console.log("创建全新的默认数据库...");
       fs.writeFileSync(dbPath, JSON.stringify(defaultData, null, 2), "utf8");
       return defaultData;
     } catch (writeError) {
-      console.error("写入全新默认数据库失败:", writeError);
       // 返回内存中的默认数据作为最后的 fallback
       return JSON.parse(JSON.stringify(defaultData)); // 深拷贝默认数据
     }
@@ -206,9 +192,7 @@ function readDB() {
 function writeDB(data) {
   try {
     fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
-    console.log("数据库写入成功");
   } catch (error) {
-    console.error("数据库写入错误:", error);
     throw error; // 重新抛出以在路由处理中捕获
   }
 }
@@ -299,22 +283,10 @@ router.get("/api/categories", (req, res) => {
   }
 });
 
-// 获取文章列表（带分页和搜索）
+// 获取文章列表
 router.get("/articles", (req, res) => {
-  console.log("进入文章列表路由处理函数");
-  console.log("req对象是否存在:", !!req);
-  console.log("req.query原始值:", req.query);
-  console.log("文章列表API请求已到达服务器");
   try {
-    console.log("===== 开始处理文章列表请求 =====");
-    console.log("请求参数完整值:", JSON.stringify(req.query, null, 2));
-    const data = readDB();
-    console.log("数据库读取完成，准备处理文章数据");
-    // 实时获取最新数据
-    const db = getDb();
-    console.log("数据库读取结果:", db);
-    console.log("文章列表请求参数:", req.query);
-    console.log("处理前的文章数据数量:", db.articles?.length);
+    const db = readDB();
     const articles = db.articles || [];
     const query = req.query || {
       search: "",
@@ -386,9 +358,6 @@ router.get("/articles", (req, res) => {
         },
       });
     } catch (processingError) {
-      console.error("文章列表处理错误:", processingError);
-      console.log("res对象是否存在:", !!res);
-      console.log("res.json是否为函数:", typeof res.json === "function");
       // 发生错误时使用原始文章列表
       total = articles.length;
       const startIndex = (page - 1) * pageSize;
@@ -409,13 +378,6 @@ router.get("/articles", (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error fetching articles:", error);
-    console.error("Error stack:", error.stack);
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
-    console.log("res对象是否存在:", !!res);
-    console.log("res对象类型:", typeof res);
-    console.log("res.status类型:", typeof res.status);
     res.statusCode = 500;
     res.json({
       code: "error",
@@ -433,6 +395,23 @@ router.post("/articles", (req, res) => {
     (cat) => cat.value === req.body.category
   );
   const categoryName = category ? category.label : "未分类";
+  
+  // 获取所有已发布的文章，按日期排序
+  const publishedArticles = data.articles
+    .filter(article => article.status !== "draft")
+    .sort((a, b) => {
+      // 尝试将日期转换为时间戳进行比较
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      // 如果日期无效，则使用ID比较（ID通常是时间戳）
+      return isNaN(dateA) || isNaN(dateB) 
+        ? String(b.id).localeCompare(String(a.id))
+        : dateB - dateA; // 降序排列，最新的文章在前
+    });
+  
+  // 获取最新的文章作为新文章的前一篇
+  const latestArticle = publishedArticles.length > 0 ? publishedArticles[0] : null;
+  
   const newArticle = {
     id: Date.now().toString(),
     title: req.body.title,
@@ -444,7 +423,18 @@ router.post("/articles", (req, res) => {
     tags: req.body.tags || [],
     summary: req.body.summary || "",
     cover: req.body.cover || "",
+    prevId: latestArticle ? latestArticle.id : null,
+    nextId: null
   };
+  
+  // 如果有最新文章，更新它的nextId指向新文章
+  if (latestArticle) {
+    const latestArticleIndex = data.articles.findIndex(a => a.id === latestArticle.id);
+    if (latestArticleIndex !== -1) {
+      data.articles[latestArticleIndex].nextId = newArticle.id;
+    }
+  }
+  
   data.articles.push(newArticle);
   writeDB(data);
   res.json({
@@ -465,26 +455,46 @@ router.put("/articles/:id", (req, res) => {
       message: "文章不存在",
     });
   }
+  
+  // 获取原文章数据，确保保留prevId和nextId
+  const originalArticle = data.articles[articleIndex];
+  const category = data.categories.find(
+    (cat) => cat.value === req.body.category
+  );
+  const categoryName = category ? category.label : "未分类";
+  
+  // 更新文章，保留原有的ID、阅读量、日期、prevId和nextId
   data.articles[articleIndex] = {
-    ...data.articles[articleIndex],
+    ...originalArticle,
     title: req.body.title,
     content: req.body.content,
     category: req.body.category,
+    categoryName: categoryName,
     tags: req.body.tags || [],
     summary: req.body.summary || "",
     cover: req.body.cover || "",
+    // 确保保留这些字段
+    id: originalArticle.id,
+    date: originalArticle.date,
+    views: originalArticle.views,
+    prevId: originalArticle.prevId,
+    nextId: originalArticle.nextId
   };
+  
   writeDB(data);
   res.json({
     code: "success",
     message: "文章更新成功",
+    data: data.articles[articleIndex]
   });
 });
 
 // 删除文章
 router.delete("/articles/:id", (req, res) => {
   const data = readDB();
-  const articleIndex = data.articles.findIndex((a) => a.id === req.params.id);
+  const articleId = req.params.id;
+  const articleIndex = data.articles.findIndex((a) => a.id === articleId);
+  
   if (articleIndex === -1) {
     res.statusCode = 404;
     return res.json({
@@ -492,9 +502,36 @@ router.delete("/articles/:id", (req, res) => {
       message: "文章不存在",
     });
   }
+  
+  // 获取要删除的文章
+  const articleToDelete = data.articles[articleIndex];
+  
+  // 查找并更新前后文章的链接
+  const prevArticleId = articleToDelete.prevId;
+  const nextArticleId = articleToDelete.nextId;
+  
+  // 如果有前一篇文章，更新它的nextId指向下一篇
+  if (prevArticleId) {
+    const prevArticleIndex = data.articles.findIndex(a => a.id === prevArticleId);
+    if (prevArticleIndex !== -1) {
+      data.articles[prevArticleIndex].nextId = nextArticleId;
+    }
+  }
+  
+  // 如果有下一篇文章，更新它的prevId指向上一篇
+  if (nextArticleId) {
+    const nextArticleIndex = data.articles.findIndex(a => a.id === nextArticleId);
+    if (nextArticleIndex !== -1) {
+      data.articles[nextArticleIndex].prevId = prevArticleId;
+    }
+  }
+  
+  // 删除文章
   data.articles.splice(articleIndex, 1);
+  
   // 同时删除该文章的所有评论
-  data.comments = data.comments.filter((c) => c.articleId !== req.params.id);
+  data.comments = data.comments.filter((c) => c.articleId !== articleId);
+  
   writeDB(data);
   res.json({
     code: "success",
@@ -507,17 +544,10 @@ router.get("/articles/detail/:id", async (req, res) => {
   try {
     const db = readDB();
     const articleId = req.params.id;
-    console.log("=== 开始处理文章详情请求 ===");
-    console.log("请求的文章ID:", articleId);
-    console.log("请求的文章ID:", articleId);
     // 修复ID类型不匹配问题，将ID统一转换为字符串比较
     // 安全访问articles数组，防止undefined错误
     const articles = Array.isArray(db.articles) ? db.articles : [];
     const article = articles.find((a) => String(a.id) === String(articleId));
-    console.log(
-      "查找到的文章原始数据:",
-      article ? `ID: ${article.id}, 标题: ${article.title}` : "未找到文章"
-    );
     // 构建安全的导航链接，避免循环引用
     if (article) {
       article.prev = article.prevId
@@ -544,14 +574,6 @@ router.get("/articles/detail/:id", async (req, res) => {
       delete article.prevId;
       delete article.nextId;
     }
-    console.log("找到的文章数据:", article);
-    // 添加服务器端日志确认数据类型
-    console.log("Found article:", article);
-    console.log(
-      "Article type:",
-      typeof article,
-      Array.isArray(article) ? "Array" : "Object"
-    );
 
     if (!article) {
       res.statusCode = 404;
@@ -566,18 +588,13 @@ router.get("/articles/detail/:id", async (req, res) => {
     article.views = (article.views || 0) + 1;
     try {
       writeDB(db);
-      console.log("阅读量更新成功");
     } catch (writeError) {
-      console.error(
-        "阅读量更新失败，将继续返回文章详情但不更新阅读量:",
-        writeError
-      );
+      // 阅读量更新失败，继续返回文章详情
     }
 
     // 显式构建安全的响应对象，仅包含必要字段
     let safeArticle;
     try {
-      console.log("开始构建安全文章对象...");
       safeArticle = {
         id: article.id,
         title: article.title,
@@ -602,17 +619,9 @@ router.get("/articles/detail/:id", async (req, res) => {
             }
           : null,
       };
-      console.log("安全文章对象构建成功，属性:", Object.keys(safeArticle));
-      console.log(
-        "导航链接检查: prev=",
-        safeArticle.prev ? safeArticle.prev.id : "null",
-        "next=",
-        safeArticle.next ? safeArticle.next.id : "null"
-      );
     } catch (constructionError) {
-      console.error("构建安全文章对象失败:", constructionError);
-      throw new Error(`构建文章响应对象时出错: ${constructionError.message}`);
-    }
+        throw new Error(`构建文章响应对象时出错: ${constructionError.message}`);
+      }
 
     try {
       res.json({
@@ -621,16 +630,6 @@ router.get("/articles/detail/:id", async (req, res) => {
         data: safeArticle,
       });
     } catch (jsonError) {
-      console.error("JSON序列化失败: ", jsonError);
-      try {
-        console.error(
-          "序列化失败的文章数据: ",
-          JSON.stringify(safeArticle, null, 2)
-        );
-      } catch (logError) {
-        console.error("记录失败的文章数据时出错: ", logError);
-        console.error("安全文章对象可能包含循环引用或不可序列化数据");
-      }
       res.statusCode = 500;
       res.json({
         code: "error",
@@ -640,7 +639,6 @@ router.get("/articles/detail/:id", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("获取文章详情失败:", error);
     res.statusCode = 500;
     res.json({
       code: "error",
@@ -653,19 +651,28 @@ router.get("/articles/detail/:id", async (req, res) => {
 
 // 获取文章评论
 router.get("/comments/article/:articleId", (req, res) => {
-  const data = readDB();
-  const comments = data.comments.filter(
-    (c) => c.articleId === req.params.articleId
-  );
-  res.json({
-    code: "success",
-    data: { comments },
-  });
+  try {
+    const data = readDB();
+    const comments = data.comments.filter(
+      (comment) => comment.articleId === req.params.articleId
+    );
+    res.json({
+      code: "success",
+      message: "获取评论列表成功",
+      data: comments,
+    });
+  } catch (error) {
+    res.statusCode = 500;
+    res.json({
+      code: "error",
+      message: "获取评论列表失败",
+      error: error.message,
+    });
+  }
 });
 
 // 回复评论
 router.post("/comments/reply", (req, res) => {
-  console.log("-------------------------------------------------------------");
   try {
     const db = readDB();
     const { targetId, parentReplyId, content, author, avatar } = req.body;
@@ -714,7 +721,6 @@ router.post("/comments/reply", (req, res) => {
       data: {},
     });
   } catch (error) {
-    console.error("回复评论错误:", error);
     res.status(500).json({
       code: "error",
       message: "回复失败: " + error.message,
@@ -724,26 +730,35 @@ router.post("/comments/reply", (req, res) => {
 
 // 创建评论
 router.post("/comments", (req, res) => {
-  const data = readDB();
-  const newComment = {
-    id: Date.now().toString(),
-    articleId: req.body.articleId,
-    author: req.body.author || "访客",
-    avatar:
-      req.body.avatar ||
-      "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
-    content: req.body.content,
-    date: new Date().toLocaleString(),
-    likes: 0,
-    replies: [],
-  };
-  data.comments.push(newComment);
-  writeDB(data);
-  res.json({
-    code: "success",
-    message: "评论创建成功",
-    data: newComment,
-  });
+  try {
+    const data = readDB();
+    const newComment = {
+      id: Date.now().toString(),
+      articleId: req.body.articleId,
+      author: req.body.author || "访客",
+      avatar:
+        req.body.avatar ||
+        "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      content: req.body.content,
+      date: new Date().toLocaleString(),
+      likes: 0,
+      replies: [],
+    };
+    data.comments.push(newComment);
+    writeDB(data);
+    res.json({
+      code: "success",
+      message: "评论创建成功",
+      data: newComment,
+    });
+  } catch (error) {
+    res.statusCode = 500;
+    res.json({
+      code: "error",
+      message: "添加评论失败",
+      error: error.message,
+    });
+  }
 });
 
 // 获取所有标签
@@ -869,7 +884,6 @@ router.get("/categories", (req, res) => {
       data: formattedCategories,
     });
   } catch (error) {
-    console.error("获取分类列表失败:", error);
     res.status(500).json({
       code: "error",
       message: "获取分类列表失败",

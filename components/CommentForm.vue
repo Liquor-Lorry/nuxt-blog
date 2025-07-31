@@ -63,7 +63,6 @@ export default {
             this.$emit('comment-added')
           } catch (error) {
             this.$message.error('评论失败，请重试')
-            console.error('Failed to submit comment:', error)
           } finally {
             this.loading = false
           }

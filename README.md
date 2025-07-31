@@ -1,69 +1,112 @@
-# lorry-nuxt
+# Lorry-Nuxt 博客系统
 
-## Build Setup
+一个基于 Nuxt.js 构建的现代化个人博客系统，支持文章发布、评论、分类、标签等功能。
+
+## 项目概述
+
+Lorry-Nuxt 是一个功能完善的个人博客系统，采用 Nuxt.js 框架开发，具有良好的用户体验和丰富的功能特性。系统支持文章的创建、编辑、分类管理，以及评论互动等功能，适合个人博客、技术分享平台等场景使用。
+
+## 功能特点
+
+- **文章管理**：支持 Markdown 编辑器，轻松创建和编辑文章
+- **分类与标签**：对文章进行分类整理，支持标签云功能
+- **评论系统**：内置评论功能，支持用户互动
+- **响应式设计**：适配各种设备屏幕，提供良好的移动端体验
+- **文章搜索**：支持全局搜索功能，快速查找内容
+- **文件上传**：支持图片上传功能，丰富文章内容
+- **数据持久化**：使用 JSON 文件数据库，简单高效
+
+## 技术栈
+
+- **前端框架**：Nuxt.js 2.x (基于 Vue.js)
+- **UI 组件库**：Element UI
+- **Markdown 编辑器**：Mavon Editor
+- **HTTP 请求**：Axios
+- **数据存储**：JSON 文件数据库
+- **服务端中间件**：Express
+
+## 构建设置
 
 ```bash
-# install dependencies
+# 安装依赖
 $ npm install
 
-# serve with hot reload at localhost:3000
+# 开发模式启动，热重载服务运行在 localhost:3500
 $ npm run dev
 
-# build for production and launch server
+# 构建生产环境并启动服务器
 $ npm run build
 $ npm run start
 
-# generate static project
+# 生成静态项目
 $ npm run generate
 ```
 
-For detailed explanation on how things work, check out the [documentation](https://nuxtjs.org).
-
-## Special Directories
-
-You can create the following extra directories, some of which have special behaviors. Only `pages` is required; you can delete them if you don't want to use their functionality.
+## 项目结构
 
 ### `assets`
 
-The assets directory contains your uncompiled assets such as Stylus or Sass files, images, or fonts.
+资源目录包含未编译的样式文件、图片或字体等资源。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/assets).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/assets)。
 
 ### `components`
 
-The components directory contains your Vue.js components. Components make up the different parts of your page and can be reused and imported into your pages, layouts and even other components.
+组件目录包含 Vue.js 组件。这些组件构成了页面的不同部分，可以在页面、布局甚至其他组件中重用和导入。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/components).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/components)。
 
 ### `layouts`
 
-Layouts are a great help when you want to change the look and feel of your Nuxt app, whether you want to include a sidebar or have distinct layouts for mobile and desktop.
+布局目录对于更改 Nuxt 应用的外观和感觉非常有帮助，无论是想要包含侧边栏还是为移动设备和桌面设备提供不同的布局。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/layouts).
-
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/layouts)。
 
 ### `pages`
 
-This directory contains your application views and routes. Nuxt will read all the `*.vue` files inside this directory and setup Vue Router automatically.
+页面目录包含应用程序的视图和路由。Nuxt 将读取此目录中的所有 `*.vue` 文件并自动设置 Vue Router。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/get-started/routing).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/get-started/routing)。
 
 ### `plugins`
 
-The plugins directory contains JavaScript plugins that you want to run before instantiating the root Vue.js Application. This is the place to add Vue plugins and to inject functions or constants. Every time you need to use `Vue.use()`, you should create a file in `plugins/` and add its path to plugins in `nuxt.config.js`.
+插件目录包含在实例化根 Vue.js 应用程序之前运行的 JavaScript 插件。这是添加 Vue 插件和注入函数或常量的地方。每当需要使用 `Vue.use()` 时，应该在 `plugins/` 中创建一个文件并将其路径添加到插件中。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/plugins).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/plugins)。
 
 ### `static`
 
-This directory contains your static files. Each file inside this directory is mapped to `/`.
+静态目录包含静态文件。此目录中的每个文件都映射到 `/`。
 
-Example: `/static/robots.txt` is mapped as `/robots.txt`.
+示例：`/static/robots.txt` 映射为 `/robots.txt`。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/static).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/static)。
 
 ### `store`
 
-This directory contains your Vuex store files. Creating a file in this directory automatically activates Vuex.
+Store 目录包含 Vuex 存储文件。在此目录中创建文件会自动激活 Vuex。
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/store).
+更多关于此目录的使用信息，请参考[文档](https://nuxtjs.org/docs/2.x/directory-structure/store)。
+
+### `server-middleware`
+
+服务器中间件目录包含 Express 服务器中间件，用于处理 API 请求和文件上传等功能。
+
+## 自定义配置
+
+项目的主要配置在 `nuxt.config.js` 文件中，包括：
+
+- 全局页面头部设置
+- CSS 样式引入
+- 插件配置
+- Axios 模块配置
+- 页面过渡效果
+- 服务端中间件
+- 构建配置
+
+## 开发指南
+
+1. 添加新文章：使用内置的 Markdown 编辑器创建新文章
+2. 自定义样式：在 `assets/css` 目录中修改样式文件
+3. 添加新组件：在 `components` 目录中创建新的 Vue 组件
+4. 扩展 API：在 `server-middleware/api.js` 中添加新的 API 端点
