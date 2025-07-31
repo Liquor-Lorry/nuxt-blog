@@ -89,8 +89,8 @@ export default {
           type: 'info'
         },
         { 
-          name: 'RSS',
-          url: '/rss',
+          name: 'QQ',
+          url: 'https://im.qq.com/index',
           icon: 'el-icon-bell',
           type: 'warning'
         },

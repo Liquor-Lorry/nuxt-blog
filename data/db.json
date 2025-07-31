@@ -1,0 +1,285 @@
+{
+  "articles": [
+    {
+      "id": "1",
+      "title": "Nuxt.js博客系统搭建",
+      "content": "# 欢迎使用Nuxt.js博客系统\n\n1. 环境准备\n首先，确保你的开发环境已经安装了Node.js和npm。你可以从Node.js官网下载并安装。\n\n2. 创建Nuxt.js项目\n使用Vue CLI或npx来创建一个新的Nuxt.js项目：\n```\nnpx create-nuxt-app my-blog\n```\n3. 安装依赖\n进入项目目录，安装必要的依赖，例如用于Markdown解析的库（如markdown-it）和用于内容管理的库（如nuxt-content）。\n```\ncd my-blog\nnpm install markdown-it nuxt-content\n```\n4. 配置Nuxt Content\n在nuxt.config.js中配置nuxt-content：\n```export default {\n  modules: [\n    '@nuxt/content',\n  ],\n  content: {\n    markdown: {\n      prism: {\n        theme: 'default'\n      }\n    }\n  }\n}\n```\n",
+      "date": "2023-11-01",
+      "views": 132,
+      "category": "frontend",
+      "categoryName": "前端开发",
+      "tags": [
+        "Nuxt.js",
+        "Vue"
+      ],
+      "prev": null,
+      "summary": "搭建过程",
+      "cover": "http://localhost:3500/uploads/1753328881754.jpg",
+      "nextId": "2"
+    },
+    {
+      "id": "2",
+      "title": "处理包含大整数的JSON字符串精度问题",
+      "content": "### 处理包含大整数的JSON字符串精度问题\n\n\n```\n    /**\n     * 安全解析包含大整数的JSON字符串\n     * 解决JavaScript中JSON.parse处理大整数时精度丢失的问题\n     * @param {string} str - 要解析的JSON字符串\n     * @param {function} [reviver] - 可选的转换函数\n     * @returns {object} 解析后的JavaScript对象\n     */\n    safeJsonParseWithBigInt(str, reviver) {\n      // 提前检查空字符串或无效输入\n      if (typeof str !== \"string\" || str.trim() === \"\") {\n        return JSON.parse(str, reviver);\n      }\n\n      // 检查可能包含大整数的部分\n      const bigIntPattern =\n        /\"(\\\\?[\\s\\S])*?\"|([+\\-]?\\d{16,}(?:\\.\\d+)?(?:[eE][+\\-]?\\d+)?)/g;\n\n      // 只有当字符串中包含16位或更长的数字时才进行处理\n      if (/\\d{16,}/.test(str)) {\n        str = str.replace(bigIntPattern, (match, quoted, num) => {\n          // 跳过已引用的字符串，只处理未引用的长数字\n          if (quoted) return match;\n\n          // 检查是否为纯数字（不含科学计数法或小数点）\n          if (num && /^[+\\-]?\\d{16,}$/.test(num)) {\n            return `\"${match}\"`;\n          }\n          return match;\n        });\n      }\n\n      return JSON.parse(str, reviver);\n    }\n```",
+      "date": "2023-11-02",
+      "views": 135,
+      "category": "life",
+      "categoryName": "生活随笔",
+      "tags": [
+        "数据库",
+        "JavaScript",
+        "json"
+      ],
+      "next": null,
+      "summary": "数据格式处理\n处理大整数json字符串精度的问题",
+      "cover": "http://localhost:3500/uploads/1753327409381.jpg",
+      "prevId": "1"
+    },
+    {
+      "id": "1753328758020",
+      "title": "美化console.log打印",
+      "content": "# 美化console.log打印\n\n\n```\n    // 美化打印实现方法\n    const prettyLog = () => {\n      const isEmpty = (value) => {\n        return value == null || value === undefined || value === \"\";\n      };\n      const prettyPrint = (title, text, color) => {\n        console.log(\n          `%c ${title} %c ${text} %c`,\n          `background:${color};border:1px solid ${color}; padding: 1px; border-radius: 2px 0 0 2px; color: #fff;`,\n          `border:1px solid ${color}; padding: 1px; border-radius: 0 2px 2px 0; color: ${color};`,\n          \"background:transparent\",\n        );\n      };\n      const info = (textOrTitle, content = \"\") => {\n        const title = isEmpty(content) ? \"Info\" : textOrTitle;\n        const text = isEmpty(content) ? textOrTitle : content;\n        prettyPrint(title, text, \"#909399\");\n      };\n      const error = (textOrTitle, content = \"\") => {\n        const title = isEmpty(content) ? \"Error\" : textOrTitle;\n        const text = isEmpty(content) ? textOrTitle : content;\n        prettyPrint(title, text, \"#F56C6C\");\n      };\n      const warning = (textOrTitle, content = \"\") => {\n        const title = isEmpty(content) ? \"Warning\" : textOrTitle;\n        const text = isEmpty(content) ? textOrTitle : content;\n        prettyPrint(title, text, \"#E6A23C\");\n      };\n      const success = (textOrTitle, content = \"\") => {\n        const title = isEmpty(content) ? \"Success \" : textOrTitle;\n        const text = isEmpty(content) ? textOrTitle : content;\n        prettyPrint(title, text, \"#67C23A\");\n      };\n      const img = (url, scale = 1) => {\n        const img = new Image();\n        img.crossOrigin = \"anonymous\";\n        img.onload = () => {\n          const c = document.createElement(\"canvas\");\n          const ctx = c.getContext(\"2d\");\n          if (ctx) {\n            c.width = img.width;\n            c.height = img.height;\n            ctx.fillStyle = \"red\";\n            ctx.fillRect(0, 0, c.width, c.height);\n            ctx.drawImage(img, 0, 0);\n            const dataUri = c.toDataURL(\"image/png\");\n\n            console.log(\n              `%c sup?`,\n              `font-size: 1px;\n                    padding: ${Math.floor(\n                      (img.height * scale) / 2,\n                    )}px ${Math.floor((img.width * scale) / 2)}px;\n                    background-image: url(${dataUri});\n                    background-repeat: no-repeat;\n                    background-size: ${img.width * scale}px ${\n                img.height * scale\n              }px;\n                    color: transparent;\n                    `,\n            );\n          }\n        };\n        img.src = url;\n      };\n\n      return {\n        info,\n        error,\n        warning,\n        success,\n        img,\n      };\n    };\n    // 创建打印对象\n    const log = prettyLog();\n\n    // 使用案例\n    log.info(\"阿尔伯特·爱因斯坦\", \"我们不能用创造问题的思维来解决问题。\");\n    log.error(\"圣雄甘地\", \"像会永生那样去学习，像明天就要死亡那样去生活。\");\n    log.warning(\n      \"马克·吐温\",\n      \"远离那些贬低你理想的人。狭隘的人经常如此，伟大的人会让你感觉自己也可以变好。\",\n    );\n    log.success(\n      \"诺曼·文森特·皮尔\",\n      \"当你改变想法的时候，记得也要改变你的世界。 \",\n    );\n    log.img(\n      \"https://cdn.pixabay.com/photo/2025/05/07/18/46/lake-9585821_1280.jpg\",\n    );\n```",
+      "date": "2025/7/24",
+      "views": 17,
+      "category": "frontend",
+      "categoryName": "前端开发",
+      "tags": [
+        "console"
+      ],
+      "summary": "console.log美化\n美化控制台打印效果",
+      "cover": "http://localhost:3500/uploads/1753328756775.jpg",
+      "prev": null,
+      "next": null
+    },
+    {
+      "id": "1753503491600",
+      "title": "金额千分位输入框money-input组件",
+      "content": "#### 使用el-input改造一个金额千分位输入框money-input组件\n\n```\n<template>\n  <el-input\n    ref=\"inputRef\"\n    v-model.trim=\"formattedValue\"\n    :placeholder=\"placeholder\"\n    :maxlength=\"maxlength\"\n    :show-word-limit=\"showWordLimit\"\n    v-bind=\"$attrs\"\n    v-on=\"$listeners\"\n    @input=\"formatInput\"\n    @keyup.enter.native=\"onEnter\"\n    @clear=\"onClear\"\n    @blur=\"onBlur\">\n    <template v-if=\"unit === 'append'\" slot=\"append\">元</template>\n    <template v-if=\"unit === 'tenThousandYuan'\" slot=\"append\">万元</template>\n  </el-input>\n</template>\n\n<script>\nexport default {\n  name: \"moneyInput\",\n  props: {\n    // 占位符\n    placeholder: {\n      type: String,\n      default: \"请输入金额\",\n    },\n    // 最大长度\n    maxlength: {\n      type: Number,\n      default: 50,\n    },\n    // 展示字数限制\n    showWordLimit: {\n      type: Boolean,\n      default: false,\n    },\n    // 小数位数\n    decimalPlaces: {\n      type: Number,\n      default: 2,\n    },\n    // 是否允许负数\n    allowNegative: {\n      type: Boolean,\n      default: false,\n    },\n    // 单位\n    unit: {\n      type: String,\n      default: \"append\",\n      validator: (value) =>\n        value === null || value === \"append\" || value === \"tenThousandYuan\",\n    },\n  },\n  data() {\n    return {\n      formattedValue: \"\",\n      value: \"\",\n    };\n  },\n  watch: {\n    // 监听格式化后的值变化更新内部值\n    formattedValue(newValue) {\n      this.value = this.parseFormattedValue(newValue);\n    },\n  },\n  methods: {\n    // 格式化处理输入值\n    formatInput(value) {\n      if (!value) {\n        this.formattedValue = \"\";\n        return;\n      }\n      // 去除非数字字符和多余的小数点 确保负号只能在开头输入\n      let hasNegativeSign = false;\n      let cleanedValue = \"\";\n      for (let char of value) {\n        if (char === \"-\") {\n          if (\n            !hasNegativeSign &&\n            (cleanedValue.length === 0 || cleanedValue === \"0\")\n          ) {\n            hasNegativeSign = true;\n            cleanedValue += \"-\";\n          }\n        } else {\n          cleanedValue += char;\n        }\n      }\n      cleanedValue = cleanedValue\n        .replace(/[^\\d.-]/g, \"\")\n        .replace(/(\\..*)\\./g, \"$1\");\n      if (!this.allowNegative && cleanedValue.startsWith(\"-\")) {\n        cleanedValue = cleanedValue.slice(1);\n      }\n      const parts = cleanedValue.split(\".\");\n      let integerPart = parts[0];\n      let decimalPart = parts.length > 1 ? \".\" + parts[1] : \"\";\n      // 控制小数位数\n      if (decimalPart.length > this.decimalPlaces) {\n        decimalPart = decimalPart.slice(0, this.decimalPlaces + 1);\n      }\n      let formattedIntegerPart = \"\";\n      let negativeSign = \"\";\n      if (integerPart.startsWith(\"-\")) {\n        negativeSign = \"-\";\n        integerPart = integerPart.slice(1);\n      }\n      while (integerPart.length > 3) {\n        formattedIntegerPart =\n          \",\" + integerPart.slice(-3) + formattedIntegerPart;\n        integerPart = integerPart.slice(0, -3);\n      }\n      // 如果以 0 开头且长度为 1，后续只能输入小数点\n      if (\n        !this.allowNegative &&\n        integerPart == \"0\" &&\n        !decimalPart &&\n        value.length === 1\n      ) {\n        this.formattedValue = \"0.\";\n      } else {\n        this.formattedValue =\n          negativeSign + integerPart + formattedIntegerPart + decimalPart;\n      }\n    },\n    // 将格式化后的字符串转换为数字来传给后台\n    parseFormattedValue(formattedValue) {\n      const numericValue = formattedValue.replace(/,/g, \"\");\n      return Number(numericValue);\n    },\n    onEnter() {\n      // 触发 enter 事件的处理逻辑\n      this.$emit(\"keyup.enter.native\");\n    },\n    onClear() {\n      this.formattedValue = \"\";\n      this.value = \"\";\n      // 触发 clear 事件的处理逻辑\n      this.$emit(\"clear\");\n    },\n    onBlur() {\n      // 触发 blur 事件的处理逻辑\n      this.$emit(\"blur\");\n      this.moneyChange();\n    },\n    moneyChange() {\n      // 自定义的 moneyChange 逻辑，可以传递转换后的数字给父组件\n      this.$emit(\"input\", this.value);\n    },\n  },\n};\n</script>\n```",
+      "date": "2025/7/26",
+      "views": 9,
+      "category": "frontend",
+      "categoryName": "前端开发",
+      "tags": [
+        "组件"
+      ],
+      "summary": "一个金额千分位输入框money-input组件",
+      "cover": "http://localhost:3500/uploads/1753503919756.jpg",
+      "prev": null,
+      "next": null
+    },
+    {
+      "id": "1753514645438",
+      "title": "html+css实现丝滑水波纹效果",
+      "content": "### html+css实现丝滑水波纹效果\n\n```\n<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>html+css实现丝滑水波纹效果</title>\n    <style>\n      body {\n        margin: 0;\n        padding: 0;\n        background: #4fa5a129;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n        height: 100vh;\n      }\n\n      .wrap-card {\n        margin: 100px auto;\n        background: transparent;\n        box-shadow: 0px 8px 28px -9px rgba(0, 0, 0, 0.45);\n        position: relative;\n        width: 200px;\n        height: 200px;\n        border-radius: 16px;\n        overflow: hidden;\n      }\n\n      .wave {\n        position: absolute;\n        width: 540px;\n        height: 700px;\n        opacity: 0.6;\n        left: 0;\n        top: 0;\n        margin-left: -50%;\n        margin-top: -70%;\n        background: linear-gradient(744deg, #af40ff, #5b42f3 60%, #00ddeb);\n      }\n\n      .text-info {\n        text-align: center;\n        font-size: 20px;\n        position: absolute;\n        top: 5.6em;\n        left: 0;\n        right: 0;\n        color: rgb(255, 255, 255);\n        font-weight: 600;\n      }\n      \n      .text-top,\n      .text-bottom {\n        font-size: 14px;\n        font-weight: 100;\n        position: relative;\n        font-weight: 600;\n        top: 1em;\n        /* 这个是将大写转为小写 */\n        /* text-transform: lowercase;  */\n      }\n\n      .text-bottom {\n        top: 1.15rem;\n        left: 1.75rem;\n      }\n\n      .wave:nth-child(2),\n      .wave:nth-child(3) {\n        top: 210px;\n      }\n      \n      .playing .wave {\n        border-radius: 40%;\n        animation: wave 3000ms infinite linear;\n      }\n\n      .wave {\n        border-radius: 40%;\n        animation: wave 55s infinite linear;\n      }\n\n      .playing .wave:nth-child(2) {\n        animation-duration: 4000ms;\n      }\n\n      .wave:nth-child(2) {\n        animation-duration: 50s;\n      }\n      \n      .playing .wave:nth-child(3) {\n        animation-duration: 5000ms;\n      }\n\n      .wave:nth-child(3) {\n        animation-duration: 45s;\n      }\n\n      @keyframes wave {\n        0% {\n          transform: rotate(0deg);\n        }\n\n        100% {\n          transform: rotate(360deg);\n        }\n      }\n    </style>\n  </head>\n  \n  <body>\n    <div class=\"wrap-card playing\">\n      <div class=\"wave\"></div>\n      <div class=\"wave\"></div>\n      <div class=\"wave\"></div>\n      <div class=\"text-info\">\n        <div class=\"text-top\">Hi! Riley</div>\n        <div class=\"text-bottom\">I'm Lorry</div>\n      </div>\n    </div>\n  </body>\n</html>\n```",
+      "date": "2025/7/26",
+      "views": 3,
+      "category": "frontend",
+      "categoryName": "前端开发",
+      "tags": [
+        "css动画"
+      ],
+      "summary": "html+css实现丝滑水波纹效果",
+      "cover": "http://localhost:3500/uploads/1753514643901.png",
+      "prev": null,
+      "next": null
+    },
+    {
+      "id": "1753535755220",
+      "title": "并发任务函数",
+      "content": "  ### 并发任务函数\n     \n     /**\n     * 并发执行任务\n     * @param {function[]} tasks 任务列表\n     * param {Number} parallelCount 并发数\n     */\n    function paralleTask(tasks, parallelCount = 2) {\n      return new Promise((resolve) => {\n        if (tasks.length === 0) {\n          resolve();\n          return;\n        }\n        let nextIndex = 0;\n        let finishCount = 0; // 已经完成的任务数\n        function _run() {\n          // 运行下一个任务\n          const task = tasks[nextIndex];\n          nextIndex++;\n          task.then(() => {\n            finishCount++;\n            if (nextIndex < tasks.length) {\n              _run();\n            } else if (finishCount === tasks.length) {\n              // 所有任务都执行完毕\n              resolve();\n            }\n          });\n        }\n        for (let i = 0; i < parallelCount && i < tasks.length; i++) {\n          _run();\n        }\n      });\n    },\n    ",
+      "date": "2025/7/26",
+      "views": 2,
+      "category": "frontend",
+      "categoryName": "",
+      "tags": [
+        "utils"
+      ],
+      "summary": "并发任务函数",
+      "cover": "http://localhost:3500/uploads/1753535753298.png",
+      "prev": null,
+      "next": null
+    }
+  ],
+  "comments": [
+    {
+      "id": "1",
+      "articleId": "1",
+      "author": "访客",
+      "avatar": "/images/avatar.jpg",
+      "content": "这篇文章很有帮助！",
+      "date": "2023-11-01 14:30",
+      "likes": 5,
+      "replies": []
+    },
+    {
+      "id": "1753256436921",
+      "articleId": "2",
+      "author": "访客",
+      "avatar": "/assets/images/avatar.jpg",
+      "content": "请输入评论内容\n请输入评论内容\n请输入评论内容\n",
+      "date": "2025/7/23 下午3:40:36",
+      "likes": 0,
+      "replies": []
+    },
+    {
+      "id": "1753321364842",
+      "articleId": "2",
+      "author": "访客",
+      "avatar": "/assets/images/avatar.jpg",
+      "content": "11111111111",
+      "date": "2025/7/24 上午9:42:44",
+      "likes": 0,
+      "replies": []
+    },
+    {
+      "id": "1753321562628",
+      "articleId": "1",
+      "author": "访客",
+      "avatar": "/assets/images/avatar.jpg",
+      "content": "测试评论测试评论测试评论测试评论测试评论",
+      "date": "2025/7/24 上午9:46:02",
+      "likes": 1,
+      "replies": []
+    },
+    {
+      "id": "1753328783310",
+      "articleId": "1753328758020",
+      "author": "访客",
+      "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      "content": "第一条评论",
+      "date": "2025/7/24 上午11:46:23",
+      "likes": 4,
+      "replies": []
+    },
+    {
+      "id": "1753329193907",
+      "articleId": "2",
+      "author": "访客",
+      "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      "content": "请输入评论内容 请输入评论内容 请输入评论内容请输入评论内容 请输入评论内容 请输入评论内容请输入评论内容 请输入评论内容 请输入评论内容请输入评论内容 请输入评论内容 请输入评论内容",
+      "date": "2025/7/24 上午11:53:13",
+      "likes": 0,
+      "replies": [
+        {
+          "id": "1753968930008",
+          "author": "访客",
+          "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+          "content": "这是测试评论",
+          "date": "2025/7/31 21:35:30",
+          "likes": 0,
+          "replies": [
+            {
+              "id": "1753968940109",
+              "author": "访客",
+              "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+              "content": "再测一次",
+              "date": "2025/7/31 21:35:40",
+              "likes": 0,
+              "replies": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1753411346079",
+      "articleId": "1753328758020",
+      "author": "访客",
+      "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      "content": "第二条评论",
+      "date": "2025/7/25 上午10:42:26",
+      "likes": 1,
+      "replies": []
+    },
+    {
+      "id": "1753503857169",
+      "articleId": "1753503491600",
+      "author": "访客",
+      "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      "content": "赞赞赞👍👍👍",
+      "date": "2025/7/26 12:24:17",
+      "likes": 0,
+      "replies": [
+        {
+          "id": "1753968891786",
+          "author": "访客",
+          "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+          "content": "真不戳！！！",
+          "date": "2025/7/31 21:34:51",
+          "likes": 0,
+          "replies": []
+        }
+      ]
+    },
+    {
+      "id": "1753969142348",
+      "articleId": "1753514645438",
+      "author": "访客",
+      "avatar": "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+      "content": "占个楼！！！\n",
+      "date": "2025/7/31 21:39:02",
+      "likes": 1,
+      "replies": []
+    }
+  ],
+  "categories": [
+    {
+      "id": "1",
+      "value": "frontend",
+      "label": "前端开发",
+      "type": "success"
+    },
+    {
+      "id": "2",
+      "value": "backend",
+      "label": "后端技术",
+      "type": "danger"
+    },
+    {
+      "id": "3",
+      "value": "life",
+      "label": "生活随笔",
+      "type": "primary"
+    },
+    {
+      "id": "4",
+      "value": "tools",
+      "label": "工具使用",
+      "type": "warning"
+    },
+    {
+      "id": "5",
+      "value": "experience",
+      "label": "心得体会",
+      "type": "primary"
+    },
+    {
+      "id": "6",
+      "value": "others",
+      "label": "其他",
+      "type": "info"
+    }
+  ],
+  "tags": [
+    {
+      "id": "1",
+      "name": "Nuxt.js",
+      "count": 1
+    },
+    {
+      "id": "2",
+      "name": "Vue",
+      "count": 1
+    },
+    {
+      "id": "3",
+      "name": "数据库",
+      "count": 1
+    },
+    {
+      "id": "4",
+      "name": "JavaScript",
+      "count": 1
+    }
+  ]
+}

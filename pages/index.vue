@@ -130,120 +130,86 @@
 </template>
 
 <script>
+import articleApi from '@/api/article'
+
 export default {
   name: 'HomePage',
+  async asyncData() {
+    try {
+      // 并行获取各类数据
+      const [
+          categoriesRes,
+          featuredRes,
+          latestRes,
+          popularRes
+        ] = await Promise.all([
+          articleApi.getCategories(),
+          articleApi.getArticles({ featured: true, pageSize: 2 }),
+          articleApi.getArticles({ sort: 'newest', order: 'desc', pageSize: 5 }),
+          articleApi.getArticles({ sort: 'views', order: 'desc', pageSize: 3 })
+        ]);
+      
+        // 从文章数据中提取标签
+        const allTags = [];
+        latestRes.data.data?.articles?.forEach(article => {
+          if (article.tags && article.tags.length) {
+            article.tags.forEach(tag => {
+              const existingTag = allTags.find(t => t.name === tag);
+              if (existingTag) {
+                existingTag.count++;
+              } else {
+                allTags.push({ name: tag, count: 1 });
+              }
+            });
+          }
+        });
+        // 生成统计数据
+        const stats = {
+          articles: latestRes.data.data.total || 0,
+          categories: categoriesRes.data.data.length || 0,
+          tags: allTags.length
+        };
+        return {
+          // 使用分类数据作为轮播图替代方案
+          banners: categoriesRes.data.data.slice(0, 6).map((cat, index) => ({
+            id: cat.id,
+            title: cat.label,
+            description: `${cat.label}分类下的文章`,
+            image: `https://picsum.photos/1200/300?random=${index + cat.id}` // 添加唯一随机参数
+          })),
+          featuredArticles: featuredRes.data.data.articles || [],
+          articles: latestRes.data.data.articles || [],
+          popularArticles: popularRes.data.data.articles || [],
+          stats,
+          tags: allTags.slice(0, 6)
+        };
+    } catch (error) {
+      console.error('获取首页数据失败:', error);
+      // 返回默认空数据避免页面错误
+      return {
+          banners: [],
+          featuredArticles: [],
+          articles: [],
+          popularArticles: [],
+          stats: {},
+          tags: []
+        };
+      }
+  },
   data() {
     return {
-      banners: [
-        {
-          id: 1,
-          title: '技术探索之旅',
-          description: '分享前端开发的心得体会与技术积累',
-          image: 'https://picsum.photos/1200/300'
-        },
-        {
-          id: 2,
-          title: '学习成长之路',
-          description: '记录每一步的进步与收获',
-          image: 'https://picsum.photos/1200/300?random=1'
-        }
-      ],
-      featuredArticles: [
-        {
-          id: 1,
-          title: 'Vue3 组件开发最佳实践',
-          summary: '深入探讨 Vue3 组件开发的技巧和注意事项...',
-          cover: 'https://picsum.photos/300/200'
-        },
-        {
-          id: 2,
-          title: 'TypeScript 高级特性解析',
-          summary: '详细讲解 TypeScript 中的高级类型和使用技巧...',
-          cover: 'https://picsum.photos/300/200?random=2'
-        }
-      ],
-      stats: {
-        articles: 108,
-        categories: 12,
-        tags: 56
-      },
-      popularArticles: [
-        {
-          id: 1,
-          title: '深入理解 Vue.js 响应式原理',
-          views: 3500
-        },
-        {
-          id: 2,
-          title: 'JavaScript 性能优化技巧',
-          views: 2800
-        },
-        {
-          id: 3,
-          title: '前端工程化实践指南',
-          views: 2300
-        }
-      ],
-      tags: [
-        { name: 'Vue', type: 'success', count: 25 },
-        { name: 'JavaScript', type: '', count: 32 },
-        { name: 'Flutter', type: 'info', count: 12 },
-        { name: 'Nuxt', type: 'danger', count: 15 },
-        { name: 'TypeScript', type: 'warning', count: 20 },
-        { name: 'Node.js', type: 'success', count: 22 }
-      ],
-      articles: [
-        {
-          id: 1,
-          title: '深入浅出 Vue3 Composition API',
-          summary: '本文将详细介绍 Vue3 Composition API 的使用方法和最佳实践，帮助你更好地组织和复用组件逻辑...',
-          date: '2024-03-20',
-          views: 1580,
-          category: '前端开发',
-          tags: ['Vue3', 'JavaScript', 'Composition API']
-        },
-        {
-          id: 2,
-          title: 'Flutter 状态管理方案对比',
-          summary: '对比分析 Flutter 中常用的几种状态管理方案，包括 Provider、Riverpod、GetX 等，帮助你选择最适合的方案...',
-          date: '2024-03-18',
-          views: 1280,
-          category: '移动开发',
-          tags: ['Flutter', 'Dart', '状态管理']
-        },
-        {
-          id: 3,
-          title: 'Nuxt3 实战：搭建个人博客',
-          summary: '从零开始，使用 Nuxt3 搭建一个功能完善的个人博客系统，包含文章管理、评论系统等功能...',
-          date: '2024-03-15',
-          views: 2100,
-          category: '实战教程',
-          tags: ['Nuxt', 'Vue3', 'SSR']
-        },
-        {
-          id: 4,
-          title: 'TypeScript 高级类型实战',
-          summary: '探索 TypeScript 中的高级类型用法，包括映射类型、条件类型、类型推导等，提升代码的类型安全性...',
-          date: '2024-03-12',
-          views: 1850,
-          category: '前端开发',
-          tags: ['TypeScript', 'JavaScript']
-        },
-        {
-          id: 5,
-          title: 'Node.js 性能优化实践',
-          summary: '分享在 Node.js 项目中常用的性能优化技巧，包括内存管理、异步操作、缓存策略等...',
-          date: '2024-03-10',
-          views: 1620,
-          category: '后端开发',
-          tags: ['Node.js', 'JavaScript', '性能优化']
-        }
-      ]
+      // 数据将通过asyncData从API获取
+      banners: [],
+      featuredArticles: [],
+      stats: {},
+      popularArticles: [],
+      tags: [],
+      articles: []
     }
   },
   methods: {
     readMore(id) {
-      this.$router.push(`/article/${id}`)
+      this.$router.push(`/article/detail/${id}`)
     },
     filterByTag(tag) {
       this.$router.push({
@@ -308,6 +274,7 @@ export default {
       cursor: pointer;
       transition: all 0.3s ease;
       border-radius: 4px;
+      margin-top: 5px;
       
       &:hover {
         transform: translateY(-5px);

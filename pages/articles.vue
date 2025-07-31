@@ -63,7 +63,7 @@
               </span>
               <span class="meta-item">
                 <i class="el-icon-collection-tag"></i>
-                {{ article.category }}
+                {{ getCategoryName(article.category) }}
               </span>
               <div class="article-tags">
                 <el-tag 
@@ -123,6 +123,7 @@ import articleApi from '@/api/article'
 import debounce from 'lodash/debounce'
 
 export default {
+  fetchOnNavigation: true,
   name: 'Articles',
   data() {
     return {
@@ -134,43 +135,14 @@ export default {
       currentPage: 1,
       pageSize: 10,
       total: 0,
-      categories: [
-        { value: 'frontend', label: '前端开发' },
-        { value: 'backend', label: '后端技术' },
-        { value: 'tools', label: '工具使用' },
-        { value: 'experience', label: '心得体会' }
-      ]
+      categories: [],
+    loadingCategories: false,
     }
   },
   computed: {
     filteredArticles() {
-      let result = [...this.articles]
-      
-      // 搜索过滤
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        result = result.filter(article => 
-          article.title.toLowerCase().includes(query) ||
-          article.summary.toLowerCase().includes(query)
-        )
-      }
-      
-      // 分类过滤
-      if (this.selectedCategory) {
-        result = result.filter(article => article.category === this.selectedCategory)
-      }
-      
-      // 排序
-      result.sort((a, b) => {
-        if (this.sortBy === 'newest') {
-          return new Date(b.date) - new Date(a.date)
-        } else {
-          return b.views - a.views
-        }
-      })
-      
-      return result
-    }
+      return this.articles
+    },
   },
   methods: {
     async fetchArticles() {
@@ -180,21 +152,37 @@ export default {
           page: this.currentPage,
           pageSize: this.pageSize,
           category: this.selectedCategory,
-          keyword: this.searchQuery,
+          search: this.searchQuery,
           sort: this.sortBy
         }
         const res = await articleApi.getArticles(params)
-        if (res.data.code === 200) {
-          const { list, total } = res.data.data
-          this.articles = list
-          this.total = total
+        if (res.data.code === "success") {
+          const { articles, total } = res.data.data || {}
+          this.articles = Array.isArray(articles) ? articles : []
+          this.total = total || 0
         }
       } catch (error) {
-        console.error('获取文章列表失败:', error)
         this.$message.error('获取文章列表失败')
+        this.articles = []
+        this.total = 0
       } finally {
         this.loading = false
       }
+    },
+    async fetchCategories() {
+      this.loadingCategories = true
+      try {
+        const res = await articleApi.getCategories()
+        this.categories = res.data.data || []
+      } catch (error) {
+        console.error('获取分类失败:', error)
+        this.$message.error('获取分类失败')
+      } finally {
+        this.loadingCategories = false
+      }
+    },
+    getCategoryName(categoryId) { 
+      return this.categories.find(item => item.value === categoryId)?.label
     },
     handleSearch: debounce(function() {
       this.currentPage = 1
@@ -213,10 +201,10 @@ export default {
       this.fetchArticles()
     },
     goToDetail(id) {
-      this.$router.push(`/article/${id}`)
+      this.$router.push(`/article/detail/${id}`)
     },
     handleEdit(article) {
-      this.$router.push(`/editor?id=${article.id}`)
+      this.$router.push(`/editor/${article.id}`)
     },
     async handleDelete(article) {
       try {
@@ -227,7 +215,7 @@ export default {
         })
         
         const res = await articleApi.deleteArticle(article.id)
-        if (res.data.code === 200) {
+        if (res.data.code === 'success') {
           this.$message.success('删除成功')
           this.fetchArticles() // 重新获取列表
         }
@@ -240,6 +228,9 @@ export default {
     }
   },
   created() {
+    this.fetchCategories()
+  },
+  async fetch() {
     this.fetchArticles()
   }
 }
@@ -551,4 +542,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

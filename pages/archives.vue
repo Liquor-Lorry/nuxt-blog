@@ -17,19 +17,19 @@
       
       <el-timeline>
         <el-timeline-item
-          v-for="(yearGroup, year) in groupedArticles"
-          :key="year"
-          :timestamp="year"
+          v-for="group in groupedArticles"
+          :key="group.year"
+          :timestamp="group.year"
           placement="top">
           <el-card>
-            <h3>{{ year }} ({{ yearGroup.length }}篇)</h3>
+            <h3>{{ group.year }} ({{ group.articles.length }}篇)</h3>
             <ul class="article-list">
-              <li v-for="article in yearGroup" :key="article.id">
+              <li v-for="article in group.articles" :key="article.id">
                 <span class="article-date">{{ article.date.split('-').slice(1).join('-') }}</span>
-                <nuxt-link :to="`/article/${article.id}`" class="article-title">
+                <nuxt-link :to="`/article/detail/${article.id}`" class="article-title">
                   {{ article.title }}
                 </nuxt-link>
-                <span class="article-category">{{ article.category }}</span>
+                <el-tag :type="getCategoryType(article.category)" size="small" >{{ article.categoryName }}</el-tag>
               </li>
             </ul>
           </el-card>
@@ -40,32 +40,22 @@
 </template>
 
 <script>
+import articleApi from '@/api/article'
+
 export default {
   name: 'Archives',
+  async asyncData() {
+    try {
+      const { data } = await articleApi.getArticles({ sort: 'newest', pageSize: 1000 })
+      return { articles: data.data.articles || [] }
+    } catch (error) {
+      console.error('Failed to fetch articles:', error)
+      return { articles: [] }
+    }
+  },
   data() {
     return {
-      searchQuery: '',
-      articles: [
-        {
-          id: 1,
-          title: 'Nuxt.js详细教程',
-          date: '2024-03-20',
-          category: '前端开发'
-        },
-        {
-          id: 2,
-          title: 'Vue3组件开发实践',
-          date: '2024-02-15',
-          category: '前端开发'
-        },
-        {
-          id: 3,
-          title: '2023年度技术总结',
-          date: '2023-12-31',
-          category: '心得体会'
-        }
-        // 更多文章...
-      ]
+      searchQuery: ''
     }
   },
   computed: {
@@ -79,17 +69,35 @@ export default {
     },
     groupedArticles() {
       const groups = {}
+      // 按年份分组并排序文章
       this.filteredArticles.forEach(article => {
         const year = article.date.split('-')[0]
         if (!groups[year]) groups[year] = []
         groups[year].push(article)
       })
-      return groups
+      // 转换为数组并按年份降序排列
+      return Object.entries(groups)
+        .map(([year, articles]) => ({
+          year,
+          articles: articles.sort((a, b) => new Date(b.date) - new Date(a.date))
+        }))
+        .sort((a, b) => b.year - a.year)
     }
   },
   methods: {
     handleSearch() {
       // 可以添加防抖处理
+    },
+    getCategoryType(category) {
+      const typeMap = {
+        'frontend': 'success',
+        'backend': 'danger',
+        'life': 'primary',
+        'tools': 'warning',
+        'experience': 'primary',
+        'other': 'info'
+      };
+      return typeMap[category] || 'other';
     }
   }
 }
@@ -174,4 +182,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

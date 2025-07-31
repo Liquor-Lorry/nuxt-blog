@@ -33,7 +33,7 @@
             关于我
           </h2>
           <p class="description">
-            热爱编程、热爱技术的前端开发者。专注于Vue.js和React技术栈，
+            热爱编程、热爱技术的前端开发者。专注于Vue.js技术栈，
             对用户体验和代码质量有着较高的追求。喜欢分享技术，热衷于学习新技术。
           </p>
         </div>
@@ -118,7 +118,7 @@
           </div>
         </div>
 
-        <div class="section">
+        <!-- <div class="section">
           <h2 class="section-title">
             <i class="el-icon-trophy"></i>
             工作经历
@@ -137,7 +137,7 @@
               </el-card>
             </el-timeline-item>
           </el-timeline>
-        </div>
+        </div> -->
 
         <div class="section">
           <h2 class="section-title">
@@ -145,9 +145,8 @@
             联系我
           </h2>
           <div class="contact-info">
-            <p><i class="el-icon-message"></i> Email: example@email.com</p>
-            <p><i class="el-icon-position"></i> GitHub: github.com/username</p>
-            <p><i class="el-icon-share"></i> Twitter: @username</p>
+            <p><i class="el-icon-message"></i> Email: lorry9475@gemail.com</p>
+            <p><i class="el-icon-position"></i> GitHub: https://github.com/Liquor-Lorry</p>
           </div>
         </div>
       </div>
@@ -199,9 +198,9 @@ export default {
       devTools: [
         { name: "VS Code", icon: "el-icon-edit", type: "" },
         { name: "Webstorm", icon: "el-icon-box", type: "warning" },
-        { name: "Cursor", icon: "el-icon-data-line", type: "danger" },
+        { name: "Trae", icon: "el-icon-data-line", type: "danger" },
         { name: "Git", icon: "el-icon-connection", type: "success" },
-        { name: "Webpack", icon: "el-icon-set-up", type: "info" },
+        { name: "Cursor", icon: "el-icon-set-up", type: "info" },
       ],
       otherSkills: [
         { name: "Vue", level: 95 },

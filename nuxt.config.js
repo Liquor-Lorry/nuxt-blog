@@ -37,7 +37,7 @@ export default {
     { src: '~/plugins/api-repositories.js', ssr: true },
     '~/plugins/app.js',
     { src: '@/plugins/mavon-editor', ssr: false },
-    { src: '@/plugins/mock', ssr: false }
+    // { src: '@/plugins/mock', ssr: false } // 禁用mock.js插件，使用真实API数据
   ],
 
   /*
@@ -45,7 +45,7 @@ export default {
    ** See https://axios.nuxtjs.org/options
    */
    axios: {
-    baseURL: 'http://localhost:3500/'
+    baseURL: ''
   },
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -74,6 +74,11 @@ export default {
     appear: true,
     duration: 300
   },
+
+  // 配置服务端中间件
+  serverMiddleware: [
+    { path: '/api', handler: '~/server-middleware/api.js' }
+  ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {

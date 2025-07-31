@@ -1,10 +1,7 @@
 <template>
   <div class="global-search">
     <el-tooltip content="搜索文章 (Ctrl + K)" placement="bottom">
-      <el-button 
-        type="text" 
-        class="search-trigger"
-        @click="showDialog">
+      <el-button type="text" class="search-trigger" @click="showDialog">
         <i class="el-icon-search"></i>
       </el-button>
     </el-tooltip>
@@ -19,7 +16,8 @@
       :show-close="true"
       width="650px"
       custom-class="search-dialog"
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <template #title>
         <div class="dialog-title">
           <i class="el-icon-search"></i>
@@ -37,31 +35,54 @@
           @keydown.esc.native="closeDialog"
           @keydown.enter.native="handleEnter"
           @keydown.down.prevent="navigateResults(1)"
-          @keydown.up.prevent="navigateResults(-1)">
+          @keydown.up.prevent="navigateResults(-1)"
+        >
           <template #suffix>
             <span class="keyboard-shortcut">ESC关闭</span>
           </template>
         </el-input>
-        
+
         <div class="search-results-container">
           <transition name="fade">
-            <div class="search-results-wrapper" v-if="searchQuery" v-loading="loading" element-loading-text="搜索中...">
-              <div class="search-results" v-if="searchResults.length && !loading" ref="resultsList">
-                <div v-for="(result, index) in searchResults" 
-                    :key="result.id"
-                    :class="['result-item', { active: currentIndex === index }]"
-                    @click="handleResultClick(result)"
-                    @mouseover="currentIndex = index">
+            <div
+              class="search-results-wrapper"
+              v-if="searchQuery"
+              v-loading="loading"
+              element-loading-text="搜索中..."
+            >
+              <div
+                class="search-results"
+                v-if="searchResults.length && !loading"
+                ref="resultsList"
+              >
+                <div
+                  v-for="(result, index) in searchResults"
+                  :key="result.id"
+                  :class="['result-item', { active: currentIndex === index }]"
+                  @click="handleResultClick(result)"
+                  @mouseover="currentIndex = index"
+                >
                   <div class="result-content">
                     <h4>
                       <i class="el-icon-document"></i>
                       <span v-html="highlightText(result.title)"></span>
                     </h4>
-                    <p class="summary" v-html="highlightText(result.summary)"></p>
+                    <p
+                      class="summary"
+                      v-html="highlightText(result.summary)"
+                    ></p>
                     <div class="result-meta">
-                      <span><i class="el-icon-date"></i> {{ result.date }}</span>
-                      <span><i class="el-icon-collection-tag"></i> {{ result.category }}</span>
-                      <span><i class="el-icon-view"></i> {{ result.views || 0 }}次阅读</span>
+                      <span
+                        ><i class="el-icon-date"></i> {{ result.date }}</span
+                      >
+                      <span
+                        ><i class="el-icon-collection-tag"></i>
+                        {{ getCategoryName(result.category) }}</span
+                      >
+                      <span
+                        ><i class="el-icon-view"></i>
+                        {{ result.views || 0 }}次阅读</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -85,111 +106,129 @@
 </template>
 
 <script>
-import debounce from 'lodash/debounce'
+import debounce from "lodash/debounce";
+import articleApi from "@/api/article";
 
 export default {
-  name: 'GlobalSearch',
+  name: "GlobalSearch",
   data() {
     return {
       dialogVisible: false,
-      searchQuery: '',
+      searchQuery: "",
       searchResults: [],
       loading: false,
-      currentIndex: -1
-    }
+      currentIndex: -1,
+      categories: [],
+      loadingCategories: false
+    };
   },
   methods: {
+    async fetchCategories() {
+      this.loadingCategories = true;
+      try {
+        const res = await articleApi.getCategories();
+        this.categories = res.data.data || [];
+      } catch (error) {
+        console.error('获取分类失败:', error);
+      } finally {
+        this.loadingCategories = false;
+      }
+    },
+    getCategoryName(categoryId) {
+      return this.categories.find(item => item.value === categoryId)?.label;
+    },
     showDialog() {
-      this.dialogVisible = true
+      this.dialogVisible = true;
       this.$nextTick(() => {
-        this.$refs.searchInput.focus()
-      })
+        this.$refs.searchInput.focus();
+      });
     },
     closeDialog() {
-      this.dialogVisible = false
-      this.searchQuery = ''
-      this.searchResults = []
-      this.currentIndex = -1
+      this.dialogVisible = false;
+      this.searchQuery = "";
+      this.searchResults = [];
+      this.currentIndex = -1;
     },
-    handleSearch: debounce(function() {
+    handleSearch: debounce(async function () {
       if (!this.searchQuery) {
-        this.searchResults = []
-        return
+        this.searchResults = [];
+        return;
       }
-      
-      this.loading = true
-      // 模拟API请求
-      setTimeout(() => {
-        this.searchResults = [
-          {
-            id: 1,
-            title: 'Nuxt.js详细教程',
-            summary: '这是一篇关于Nuxt.js的详细教程，介绍了如何使用Nuxt.js搭建个人博客...',
-            date: '2024-03-20',
-            category: '前端开发'
-          },
-          {
-            id: 2,
-            title: 'Vue3组件开发实践',
-            summary: 'Vue3的组件开发与Vue2有很大的不同，本文将详细介绍...',
-            date: '2024-03-15',
-            category: '前端开发'
-          }
-        ]
-        this.loading = false
-      }, 300)
+
+      this.loading = true;
+      try {
+        const res = await articleApi.getArticles({ search: this.searchQuery });
+        if (res.data.code === "success") {
+          this.searchResults = res.data.data.articles || [];
+        } else {
+          this.searchResults = [];
+        }
+      } catch (error) {
+        this.searchResults = [];
+        console.error("搜索失败:", error);
+      } finally {
+        this.loading = false;
+      }
     }, 300),
     handleResultClick(result) {
-      this.closeDialog()
-      this.$router.push(`/article/${result.id}`)
+      this.closeDialog();
+      this.$router.push(`/article/detail/${result.id}`);
     },
     handleEnter() {
       if (this.currentIndex >= 0 && this.searchResults[this.currentIndex]) {
-        this.handleResultClick(this.searchResults[this.currentIndex])
+        this.handleResultClick(this.searchResults[this.currentIndex]);
       }
     },
     highlightText(text) {
-      if (!this.searchQuery) return text
-      const reg = new RegExp(this.searchQuery, 'gi')
-      return text.replace(reg, match => `<span class="highlight">${match}</span>`)
+      if (!this.searchQuery) return text;
+      const reg = new RegExp(this.searchQuery, "gi");
+      return text.replace(
+        reg,
+        (match) => `<span class="highlight">${match}</span>`
+      );
     },
     navigateResults(direction) {
-      const maxIndex = this.searchResults.length - 1
-      if (maxIndex < 0) return
+      const maxIndex = this.searchResults.length - 1;
+      if (maxIndex < 0) return;
 
       if (this.currentIndex === -1) {
-        this.currentIndex = direction > 0 ? 0 : maxIndex
+        this.currentIndex = direction > 0 ? 0 : maxIndex;
       } else {
-        this.currentIndex = (this.currentIndex + direction + this.searchResults.length) % this.searchResults.length
+        this.currentIndex =
+          (this.currentIndex + direction + this.searchResults.length) %
+          this.searchResults.length;
       }
 
       this.$nextTick(() => {
-        const activeItem = this.$refs.resultsList.children[this.currentIndex]
+        const activeItem = this.$refs.resultsList.children[this.currentIndex];
         if (activeItem) {
-          activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
-      })
+      });
     },
     handleDialogClosed() {
-      this.searchQuery = ''
-      this.searchResults = []
-      this.currentIndex = -1
-      this.loading = false
-    }
+      this.searchQuery = "";
+      this.searchResults = [];
+      this.currentIndex = -1;
+      this.loading = false;
+    },
+  },
+  created() {
+    this.fetchCategories();
   },
   mounted() {
     // 添加快捷键支持
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'k') {
-        e.preventDefault()
-        this.showDialog()
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.key === "k") {
+        e.preventDefault();
+        this.showDialog();
       }
-    })
+    });
   },
   beforeDestroy() {
-    document.removeEventListener('keydown', this.handleKeydown)
-  }
-}
+    document.removeEventListener("keydown", this.handleKeydown);
+  },
+};
 </script>
 
 <style lang="scss" scoped>
@@ -200,7 +239,7 @@ export default {
     padding: 0 15px;
     height: 32px;
     font-size: 18px;
-    
+
     &:hover {
       color: var(--el-color-primary);
     }
@@ -224,7 +263,7 @@ export default {
       display: flex;
       align-items: center;
       font-size: 16px;
-      
+
       i {
         margin-right: 8px;
         font-size: 18px;
@@ -239,7 +278,7 @@ export default {
     max-height: 70vh;
     overflow: hidden;
   }
-  
+
   .search-content {
     height: 100%;
     display: flex;
@@ -254,7 +293,7 @@ export default {
       margin-top: 20px;
       position: relative;
       overflow: hidden;
-      
+
       .search-results-wrapper,
       .search-placeholder {
         position: absolute;
@@ -274,11 +313,11 @@ export default {
         overflow-y: auto;
         border-radius: 4px;
         padding: 4px;
-        
+
         &::-webkit-scrollbar {
           width: 4px;
         }
-        
+
         &::-webkit-scrollbar-thumb {
           background-color: rgba(0, 0, 0, 0.2);
           border-radius: 2px;
@@ -293,18 +332,19 @@ export default {
           border: 1px solid #e4e7ed;
           background-color: #fff;
           box-shadow: 0 1px 3px rgba(64, 158, 255, 0.05);
-          
+
           &:last-child {
             margin-bottom: 0;
           }
-          
-          &:hover, &.active {
-            border-color: #409EFF;
+
+          &:hover,
+          &.active {
+            border-color: #409eff;
             background-color: #ecf5ff;
             transform: translateY(-1px);
             box-shadow: 0 3px 8px rgba(64, 158, 255, 0.15);
           }
-          
+
           .result-content {
             h4 {
               margin: 0 0 12px;
@@ -314,33 +354,33 @@ export default {
               display: flex;
               align-items: center;
               line-height: 1.4;
-              
+
               i {
                 margin-right: 8px;
                 font-size: 18px;
-                color: #409EFF;
+                color: #409eff;
               }
-              
+
               :deep(.highlight) {
                 color: var(--el-color-danger);
                 font-weight: bold;
                 padding: 0 2px;
               }
             }
-            
+
             .summary {
               margin: 0 0 12px;
               font-size: 14px;
               color: #666;
               line-height: 1.6;
-              
+
               :deep(.highlight) {
                 background: rgba(255, 208, 75, 0.3);
                 padding: 0 2px;
                 border-radius: 2px;
               }
             }
-            
+
             .result-meta {
               display: flex;
               align-items: center;
@@ -348,11 +388,11 @@ export default {
               gap: 16px;
               font-size: 13px;
               color: #999;
-              
+
               span {
                 display: flex;
                 align-items: center;
-                
+
                 i {
                   margin-right: 4px;
                 }
@@ -370,12 +410,12 @@ export default {
         justify-content: center;
         height: 200px;
         color: #909399;
-        
+
         i {
           font-size: 32px;
           margin-bottom: 10px;
         }
-        
+
         p {
           margin: 0;
           font-size: 14px;
@@ -410,7 +450,7 @@ export default {
         .search-results {
           .result-item {
             padding: 12px;
-            
+
             .result-content {
               .result-meta {
                 gap: 8px;
@@ -436,4 +476,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

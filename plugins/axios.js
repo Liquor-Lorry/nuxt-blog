@@ -60,7 +60,7 @@ export default function(ctx) {
       store.dispatch('changeToken', '')
 
     } else {
-      app.$toast.show(error.message)
+      app.$toast.error(error.message)
     }
 
     if (error.response && error.response.status === 500) {

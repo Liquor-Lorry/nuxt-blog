@@ -8,18 +8,18 @@
       <div class="category-list">
         <el-tag
           v-for="category in categories"
-          :key="category.name"
+          :key="category.value"
           :type="category.type"
           effect="dark"
           class="category-item"
           @click="handleCategoryClick(category)">
-          {{ category.name }}
+          {{ category.label }}
           <span class="category-count">({{ category.count }})</span>
         </el-tag>
       </div>
       
       <div class="article-list" v-if="selectedCategory">
-        <h3>{{ selectedCategory.name }}下的文章</h3>
+        <h3>{{ selectedCategory.label }}下的文章</h3>
         <el-timeline>
           <el-timeline-item
             v-for="article in categoryArticles"
@@ -28,7 +28,7 @@
             placement="top">
             <el-card>
               <h4>
-                <nuxt-link :to="`/article/${article.id}`">
+                <nuxt-link :to="`/article/detail/${article.id}`">
                   {{ article.title }}
                 </nuxt-link>
               </h4>
@@ -42,33 +42,49 @@
 </template>
 
 <script>
+import articleApi from '@/api/article'
+
 export default {
+    async asyncData() {
+      try {
+        const res = await articleApi.getCategories();
+        return {
+          categories: res.data.data || []
+        };
+      } catch (error) {
+        console.error('获取分类失败:', error);
+        return { categories: [] };
+      }
+    },
   name: 'Categories',
   data() {
     return {
-      categories: [
-        { name: '前端开发', count: 12, type: '' },
-        { name: '后端技术', count: 8, type: 'success' },
-        { name: '工具使用', count: 5, type: 'warning' },
-        { name: '心得体会', count: 3, type: 'info' }
-      ],
+      categories: [],
       selectedCategory: null,
       categoryArticles: []
     }
   },
   methods: {
-    handleCategoryClick(category) {
+    async handleCategoryClick(category) {
       this.selectedCategory = category
-      // 模拟获取分类下的文章
-      this.categoryArticles = [
-        {
-          id: 1,
-          title: '文章标题1',
-          date: '2024-03-20',
-          summary: '文章简介...'
-        },
-        // 更多文章...
-      ]
+      try {
+        const res = await articleApi.getArticles({ category: category.value });
+        if (res.data.code === 'success') {
+          this.categoryArticles = res.data.data.articles || [];
+        } else {
+          this.categoryArticles = [];
+        }
+      } catch (error) {
+        console.error('获取分类文章失败:', error);
+        this.categoryArticles = [];
+      }
+    }
+  },
+  mounted() {
+    // 页面加载完成后自动选择第一个分类
+    if (this.categories.length > 0) {
+      this.selectedCategory = this.categories[0];
+      this.handleCategoryClick(this.categories[0]);
     }
   }
 }
@@ -108,4 +124,4 @@ export default {
     }
   }
 }
-</style> 
+</style>
